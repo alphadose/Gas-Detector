@@ -4,7 +4,9 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.content.Intent;
+import android.os.Build;
 import android.os.Handler;
+import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 
@@ -22,8 +24,10 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Toast;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.reflect.Method;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
@@ -34,15 +38,31 @@ public class MainActivity extends AppCompatActivity {
     private List<Gas> gasList = new ArrayList<>();
     private GasAdapter gasAdapter;
 
-    BluetoothAdapter bluetoothAdapter=BluetoothAdapter.getDefaultAdapter();
+    BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
     public String DEVICE_ADDRESS = "30:58:01:D6:19:46";
+    public String DEVICE_NAME = "HC-05";
     public UUID PORT_UUID = UUID.fromString("00001101-0000-1000-8000-00805f9b34fb");
     public BluetoothDevice device;
     public Boolean found = false;
     public BluetoothSocket socket;
-    public OutputStream outputStream;
     public InputStream inputStream;
-    public Handler handler;
+
+    public Handler mHandler = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+            byte[] writeBuf = (byte[]) msg.obj;
+            int begin = (int)msg.arg1;
+            int end = (int)msg.arg2;
+
+            switch(msg.what) {
+                case 1:
+                    String writeMessage = new String(writeBuf);
+                    writeMessage = writeMessage.substring(begin, end);
+                    Log.d("Answer", writeMessage);
+                    break;
+            }
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -65,35 +85,18 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(getApplicationContext(),"Please Pair the Device first",Toast.LENGTH_SHORT).show();
         } else {
             for (BluetoothDevice iterator : bondedDevices) {
-                if(iterator.getAddress().equals(DEVICE_ADDRESS)) //Replace with iterator.getName() if comparing Device names.
+                if(iterator.getName().startsWith("HC"))
                 {
-                    device=iterator; //device is an object of type BluetoothDevice
-                    found=true;
+                    device = iterator;
+                    found = true;
                     break;
-                } } }
-        try {
-            socket = device.createRfcommSocketToServiceRecord(PORT_UUID);
-            socket.connect();
-
-            outputStream = socket.getOutputStream();
-
-            inputStream = socket.getInputStream();
-
-            int byteCount = inputStream.available();
-            if (byteCount > 0) {
-                byte[] rawBytes = new byte[byteCount];
-                inputStream.read(rawBytes);
-                final String string = new String(rawBytes, "UTF-8");
-                handler.post(new Runnable() {
-                    public void run() {
-                        Log.d("message", string);
-                    }
-                });
+                }
             }
         }
-        catch (Exception e) {
-            Log.d("message", "error", e);
-        }
+
+        ConnectThread mConnectThread = new ConnectThread(device);
+        mConnectThread.start();
+
         gasAdapter = new GasAdapter(gasList);
         final LinearLayoutManager mLayoutManager = new LinearLayoutManager(getApplicationContext());
         recyclerView.setLayoutManager(mLayoutManager);
@@ -102,6 +105,94 @@ public class MainActivity extends AppCompatActivity {
         recyclerView.setAdapter(gasAdapter);
 
         prepareGasData();
+    }
+
+    private class ConnectThread extends Thread {
+
+        private final BluetoothSocket mmSocket;
+        private final BluetoothDevice mmDevice;
+
+        public ConnectThread(BluetoothDevice device) {
+            BluetoothSocket tmp = null;
+            mmDevice = device;
+            try {
+                tmp = device.createRfcommSocketToServiceRecord(PORT_UUID);
+            } catch (IOException e) { }
+            mmSocket = tmp;
+        }
+
+        public void run() {
+            try {
+                mmSocket.connect();
+            } catch (IOException connectException) {
+                try {
+                    mmSocket.close();
+                } catch (IOException closeException) { }
+                return;
+            }
+            ConnectedThread mConnectedThread = new ConnectedThread(mmSocket);
+            mConnectedThread.start();
+        }
+
+        public void cancel() {
+            try {
+                mmSocket.close();
+            } catch (IOException e) { }
+        }
+    }
+
+    private class ConnectedThread extends Thread {
+
+        private final BluetoothSocket mmSocket;
+        private final InputStream mmInStream;
+        private final OutputStream mmOutStream;
+
+        public ConnectedThread(BluetoothSocket socket) {
+            mmSocket = socket;
+            InputStream tmpIn = null;
+            OutputStream tmpOut = null;
+            try {
+                tmpIn = socket.getInputStream();
+                tmpOut = socket.getOutputStream();
+            } catch (IOException e) { }
+            mmInStream = tmpIn;
+            mmOutStream = tmpOut;
+        }
+
+        public void run() {
+            byte[] buffer = new byte[1024];
+            int begin = 0;
+            int bytes = 0;
+            while (true) {
+                try {
+                    bytes += mmInStream.read(buffer, bytes, buffer.length - bytes);
+                    for(int i = begin; i < bytes; i++) {
+                        if(buffer[i] == ")".getBytes()[0]) {
+                            mHandler.obtainMessage(1, begin, i, buffer).sendToTarget();
+                            begin = i + 1;
+                            if(i == bytes - 1) {
+                                bytes = 0;
+                                begin = 0;
+                            }
+                        }
+                    }
+                } catch (IOException e) {
+                    break;
+                }
+            }
+        }
+
+        public void write(byte[] bytes) {
+            try {
+                mmOutStream.write(bytes);
+            } catch (IOException e) { }
+        }
+
+        public void cancel() {
+            try {
+                mmSocket.close();
+            } catch (IOException e) { }
+        }
     }
 
     private void prepareGasData() {
