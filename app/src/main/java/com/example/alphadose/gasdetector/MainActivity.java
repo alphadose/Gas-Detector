@@ -30,6 +30,7 @@ import java.io.OutputStream;
 import java.lang.reflect.Method;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -56,9 +57,10 @@ public class MainActivity extends AppCompatActivity {
 
             switch(msg.what) {
                 case 1:
-                    String writeMessage = new String(writeBuf);
-                    writeMessage = writeMessage.substring(begin, end);
-                    Log.d("Answer", writeMessage);
+                    String data = new String(writeBuf);
+                    data = data.substring(begin, end);
+                    Log.d("Answer", data);
+                    updateGasData(data);
                     break;
             }
         }
@@ -167,7 +169,7 @@ public class MainActivity extends AppCompatActivity {
                 try {
                     bytes += mmInStream.read(buffer, bytes, buffer.length - bytes);
                     for(int i = begin; i < bytes; i++) {
-                        if(buffer[i] == ")".getBytes()[0]) {
+                        if(buffer[i] == ";".getBytes()[0]) {
                             mHandler.obtainMessage(1, begin, i, buffer).sendToTarget();
                             begin = i + 1;
                             if(i == bytes - 1) {
@@ -229,6 +231,18 @@ public class MainActivity extends AppCompatActivity {
         gas = new Gas("Ne", "Neon", "50 ppm");
         gasList.add(gas);
 
+        gasAdapter.notifyDataSetChanged();
+    }
+
+    public void updateGasData(String data) {
+        HashMap<String, String> GasMap = new HashMap<String, String>();
+        String units[] = data.split(",");
+        for(String unit: units) {
+            GasMap.put(unit.split("=")[0], unit.split("=")[1]);
+        }
+        for(Gas gas: gasList) {
+            gas.setConcentration(GasMap.get(gas.getFormula()) + " ppm");
+        }
         gasAdapter.notifyDataSetChanged();
     }
 }
