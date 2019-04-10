@@ -22,6 +22,7 @@ import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.IOException;
@@ -38,6 +39,7 @@ import java.util.UUID;
 public class MainActivity extends AppCompatActivity {
     private static List<Gas> gasList = new ArrayList<>();
     private static GasAdapter gasAdapter;
+    private static boolean prepared = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,7 +54,24 @@ public class MainActivity extends AppCompatActivity {
         recyclerView.addItemDecoration(new DividerItemDecoration(this, LinearLayoutManager.VERTICAL));
         recyclerView.setAdapter(gasAdapter);
 
-        prepareGasData();
+        recyclerView.addOnItemTouchListener(
+                new RecyclerItemClickListener(getApplicationContext(), recyclerView ,new RecyclerItemClickListener.OnItemClickListener() {
+                    @Override public void onItemClick(View view, int position) {
+                        TextView tr = (TextView) view.findViewById(R.id.formula);
+                        String formula = tr.getText().toString();
+                        Intent intent = new Intent(MainActivity.this, GraphActivity.class);
+                        intent.putExtra("gas", formula);
+                        startActivity(intent);
+                    }
+
+                    @Override public void onLongItemClick(View view, int position) {}
+                })
+        );
+
+        if(!prepared) {
+            prepareGasData();
+            prepared = true;
+        }
 
         Intent intent = new Intent(this, BluetoothService.class);
         startService(intent);

@@ -20,8 +20,8 @@
         </activity>
         <activity
             android:name=".GraphActivity"
-            android:label="@string/title_activity_graph"
-            android:theme="@style/AppTheme.NoActionBar" />
+            android:label="GasDetector"
+            android:parentActivityName=".MainActivity"/>
 
         <service
             android:name=".BluetoothService"
