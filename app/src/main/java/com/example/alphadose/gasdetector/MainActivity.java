@@ -36,8 +36,8 @@ import java.util.Set;
 import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity {
-    private List<Gas> gasList = new ArrayList<>();
-    private GasAdapter gasAdapter;
+    private static List<Gas> gasList = new ArrayList<>();
+    private static GasAdapter gasAdapter;
 
     BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
     public String DEVICE_ADDRESS = "30:58:01:D6:19:46";
@@ -234,7 +234,7 @@ public class MainActivity extends AppCompatActivity {
         gasAdapter.notifyDataSetChanged();
     }
 
-    public void updateGasData(String data) {
+    public static void updateGasData(String data) {
         HashMap<String, String> GasMap = new HashMap<String, String>();
         String units[] = data.split(",");
         for(String unit: units) {
