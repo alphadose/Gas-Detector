@@ -47,8 +47,8 @@ public class GraphActivity extends AppCompatActivity {
         graph.getViewport().setMaxX(20);
 
         graph.getViewport().setYAxisBoundsManual(true);
-        graph.getViewport().setMinY(100);
-        graph.getViewport().setMaxY(1400);
+        graph.getViewport().setMinY(0);
+        graph.getViewport().setMaxY(1200);
     }
 
     public static void updateGasData(String data) {

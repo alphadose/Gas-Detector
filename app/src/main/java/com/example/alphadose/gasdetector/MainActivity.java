@@ -93,7 +93,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public static void updateGasData(String data) {
-        HashMap<String, String> GasMap = new HashMap<String, String>();
+        HashMap<String, String> GasMap = new HashMap<>();
         String units[] = data.split(",");
         for(String unit: units) {
             GasMap.put(unit.split("=")[0], unit.split("=")[1]);

@@ -5,15 +5,21 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.content.Intent;
+import android.media.Ringtone;
+import android.media.RingtoneManager;
+import android.net.Uri;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
+import android.support.v4.app.NotificationCompat;
+import android.support.v4.app.NotificationManagerCompat;
 import android.util.Log;
 import android.widget.Toast;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.HashMap;
 import java.util.Set;
 import java.util.UUID;
 
@@ -44,10 +50,39 @@ public class BluetoothService extends Service {
                     Log.d("Answer", data);
                     MainActivity.updateGasData(data);
                     GraphActivity.updateGasData(data);
+                    safetyCheck(data);
                     break;
             }
         }
     };
+
+    private void safetyCheck(String data) {
+        HashMap<String, String> GasMap = new HashMap<>();
+        String units[] = data.split(",");
+        for(String unit: units) {
+            GasMap.put(unit.split("=")[0], unit.split("=")[1]);
+        }
+        for(String gas: GasMap.keySet()) {
+            if(Double.parseDouble(GasMap.get(gas)) > 890) {
+                Uri notification = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+                Ringtone r = RingtoneManager.getRingtone(getApplicationContext(), notification);
+                r.play();
+
+                NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "abcdef")
+                        .setSmallIcon(R.drawable.ic_stat_info)
+                        .setContentTitle("WARNING")
+                        .setContentText("Concentration of "+ gas + " is dangerously high")
+                        .setStyle(new NotificationCompat.BigTextStyle()
+                                .bigText("Concentration of " + gas + " is dangerously high"))
+                        .setPriority(NotificationCompat.PRIORITY_MAX);
+
+                NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
+
+                notificationManager.notify(1, builder.build());
+                return;
+            }
+        }
+    }
 
     @Override
     public IBinder onBind(Intent intent) {
