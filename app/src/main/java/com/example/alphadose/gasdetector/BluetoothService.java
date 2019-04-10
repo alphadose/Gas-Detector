@@ -43,6 +43,7 @@ public class BluetoothService extends Service {
                     data = data.substring(begin, end);
                     Log.d("Answer", data);
                     MainActivity.updateGasData(data);
+                    GraphActivity.updateGasData(data);
                     break;
             }
         }
