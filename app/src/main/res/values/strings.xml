@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">GasDetector</string>
+    <string name="title_activity_graph">GraphActivity</string>
 </resources>
