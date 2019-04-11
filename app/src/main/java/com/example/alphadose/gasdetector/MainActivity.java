@@ -57,7 +57,9 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                     MY_PERMISSION_ACCESS_COARSE_LOCATION );
         }
 
-        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 3000, 10, this);
+        if ( ContextCompat.checkSelfPermission( this, android.Manifest.permission.ACCESS_COARSE_LOCATION ) == PackageManager.PERMISSION_GRANTED ) {
+            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 3000, 10, this);
+        }
     }
 
     @Override
