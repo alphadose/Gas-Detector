@@ -6,7 +6,6 @@ import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
-import android.location.LocationProvider;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -39,14 +38,6 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
-
-        Button next = (Button) findViewById(R.id.button);
-        next.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View view) {
-                Intent myIntent = new Intent( view.getContext(), Main2.class);
-                startActivityForResult(myIntent, 0);
-            }
-        });
 
         // check if GPS enabled
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
@@ -131,5 +122,10 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
 
         //adding the string request to request queue
         requestQueue.add(stringRequest);
+    }
+
+    public void gasdetection(View view) {
+        Intent myIntent = new Intent(this, Main2.class);
+        startActivity(myIntent);
     }
 }
