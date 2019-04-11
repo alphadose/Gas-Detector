@@ -6,6 +6,7 @@ import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.location.LocationProvider;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -32,7 +33,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     private LocationManager locationManager;
     public String key = "d6e2f7b05bd92ce69ccc964f7a3f183b";
     public String api_url = "http://api.openweathermap.org/data/2.5/weather";
-    private static final int MY_PERMISSION_ACCESS_COARSE_LOCATION = 11;
+    private static final int MY_PERMISSION_ACCESS_FINE_LOCATION = 11;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,18 +50,15 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
 
         // check if GPS enabled
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        if ( ContextCompat.checkSelfPermission( this, android.Manifest.permission.ACCESS_FINE_LOCATION ) != PackageManager.PERMISSION_GRANTED ) {
+            ActivityCompat.requestPermissions(this, new String[]{
+                            android.Manifest.permission.ACCESS_FINE_LOCATION},
+                    MY_PERMISSION_ACCESS_FINE_LOCATION);
 
-//        if ( ContextCompat.checkSelfPermission( this, android.Manifest.permission.ACCESS_COARSE_LOCATION ) != PackageManager.PERMISSION_GRANTED ) {
-//
-//            ActivityCompat.requestPermissions( this, new String[] {
-//                    android.Manifest.permission.ACCESS_COARSE_LOCATION  },
-//                    MY_PERMISSION_ACCESS_COARSE_LOCATION );
-//        }
-//
-//        if ( ContextCompat.checkSelfPermission( this, android.Manifest.permission.ACCESS_COARSE_LOCATION ) == PackageManager.PERMISSION_GRANTED ) {
-//
-//        }
-        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 3000, 10, this);
+            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 3000, 10, this);
+        } else {
+            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 3000, 10, this);
+        }
     }
 
     @Override
@@ -92,6 +90,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     }
 
     public void getJSON(String address){
+        Log.e("error", address);
         StringRequest stringRequest = new StringRequest(Request.Method.GET, address,
                 new Response.Listener<String>() {
                     @Override
@@ -99,8 +98,9 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
 
                         try {
                             //getting the whole json object from the response
+                            Log.e( "error", response);
                             JSONObject obj = new JSONObject(response);
-                            Log.d( "response", obj.toString());
+                            Log.e( "error", obj.toString());
 
 
                             TextView v = findViewById(R.id.location);
