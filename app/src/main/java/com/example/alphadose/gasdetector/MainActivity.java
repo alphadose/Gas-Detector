@@ -49,17 +49,18 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
 
         // check if GPS enabled
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-        Toast.makeText(getBaseContext(), "Gps turned on ", Toast.LENGTH_LONG).show();
-        if ( ContextCompat.checkSelfPermission( this, android.Manifest.permission.ACCESS_COARSE_LOCATION ) != PackageManager.PERMISSION_GRANTED ) {
 
-            ActivityCompat.requestPermissions( this, new String[] {
-                    android.Manifest.permission.ACCESS_COARSE_LOCATION  },
-                    MY_PERMISSION_ACCESS_COARSE_LOCATION );
-        }
-
-        if ( ContextCompat.checkSelfPermission( this, android.Manifest.permission.ACCESS_COARSE_LOCATION ) == PackageManager.PERMISSION_GRANTED ) {
-            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 3000, 10, this);
-        }
+//        if ( ContextCompat.checkSelfPermission( this, android.Manifest.permission.ACCESS_COARSE_LOCATION ) != PackageManager.PERMISSION_GRANTED ) {
+//
+//            ActivityCompat.requestPermissions( this, new String[] {
+//                    android.Manifest.permission.ACCESS_COARSE_LOCATION  },
+//                    MY_PERMISSION_ACCESS_COARSE_LOCATION );
+//        }
+//
+//        if ( ContextCompat.checkSelfPermission( this, android.Manifest.permission.ACCESS_COARSE_LOCATION ) == PackageManager.PERMISSION_GRANTED ) {
+//
+//        }
+        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 3000, 10, this);
     }
 
     @Override
