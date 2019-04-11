@@ -1,106 +1,132 @@
 package com.example.alphadose.gasdetector;
 
+import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 
-import android.support.v7.widget.DefaultItemAnimator;
-import android.support.v7.widget.DividerItemDecoration;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
-import android.view.View;
-import android.widget.TextView;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
 
-public class MainActivity extends AppCompatActivity {
-    private static List<Gas> gasList = new ArrayList<>();
-    private static GasAdapter gasAdapter;
-    private static boolean prepared = false;
+import android.util.Log;
+import android.view.View;
+import android.widget.Button;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+public class MainActivity extends AppCompatActivity implements LocationListener {
+    private LocationManager locationManager;
+    public String key = "d6e2f7b05bd92ce69ccc964f7a3f183b";
+    public String api_url = "http://api.openweathermap.org/data/2.5/weather";
+    private static final int MY_PERMISSION_ACCESS_COARSE_LOCATION = 11;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-        RecyclerView recyclerView = findViewById(R.id.recycler_view);
+        setContentView(R.layout.main);
 
-        gasAdapter = new GasAdapter(gasList);
-        final LinearLayoutManager mLayoutManager = new LinearLayoutManager(getApplicationContext());
-        recyclerView.setLayoutManager(mLayoutManager);
-        recyclerView.setItemAnimator(new DefaultItemAnimator());
-        recyclerView.addItemDecoration(new DividerItemDecoration(this, LinearLayoutManager.VERTICAL));
-        recyclerView.setAdapter(gasAdapter);
+        Button next = (Button) findViewById(R.id.button);
+        next.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View view) {
+                Intent myIntent = new Intent( view.getContext(), Main2.class);
+                startActivityForResult(myIntent, 0);
+            }
+        });
 
-        recyclerView.addOnItemTouchListener(
-                new RecyclerItemClickListener(getApplicationContext(), recyclerView ,new RecyclerItemClickListener.OnItemClickListener() {
-                    @Override public void onItemClick(View view, int position) {
-                        TextView tr = view.findViewById(R.id.formula);
-                        String formula = tr.getText().toString();
-                        Intent intent = new Intent(MainActivity.this, GraphActivity.class);
-                        intent.putExtra("gas", formula);
-                        startActivity(intent);
+        // check if GPS enabled
+        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        Toast.makeText(getBaseContext(), "Gps turned on ", Toast.LENGTH_LONG).show();
+        if ( ContextCompat.checkSelfPermission( this, android.Manifest.permission.ACCESS_COARSE_LOCATION ) != PackageManager.PERMISSION_GRANTED ) {
+
+            ActivityCompat.requestPermissions( this, new String[] {
+                    android.Manifest.permission.ACCESS_COARSE_LOCATION  },
+                    MY_PERMISSION_ACCESS_COARSE_LOCATION );
+        }
+
+        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 3000, 10, this);
+    }
+
+    @Override
+    public void onLocationChanged(Location location) {
+        String url = api_url+"?lat="+location.getLatitude()+"&lon="+location.getLongitude()+"&appid="+key;
+        getJSON(url);
+    }
+
+    @Override
+    public void onProviderDisabled(String provider) {
+
+        /******** Called when User off Gps *********/
+
+        Toast.makeText(getBaseContext(), "Gps turned off ", Toast.LENGTH_LONG).show();
+    }
+
+    @Override
+    public void onProviderEnabled(String provider) {
+
+        /******** Called when User on Gps  *********/
+
+        Toast.makeText(getBaseContext(), "Gps turned on ", Toast.LENGTH_LONG).show();
+    }
+
+    @Override
+    public void onStatusChanged(String provider, int status, Bundle extras) {
+        // TODO Auto-generated method stub
+
+    }
+
+    public void getJSON(String address){
+        StringRequest stringRequest = new StringRequest(Request.Method.GET, address,
+                new Response.Listener<String>() {
+                    @Override
+                    public void onResponse(String response) {
+
+                        try {
+                            //getting the whole json object from the response
+                            JSONObject obj = new JSONObject(response);
+                            Log.d( "response", obj.toString());
+
+
+                            TextView v = findViewById(R.id.location);
+                            v.setText(obj.getString("name") + ", " + obj.getJSONObject("sys").getString("country"));
+
+                            TextView v1 = findViewById(R.id.value2);
+                            v1.setText(obj.getJSONObject("main").getString("temp") + " K");
+                            TextView v2 = findViewById(R.id.value3);
+                            v2.setText(obj.getJSONObject("main").getString("humidity") + " %");
+                            TextView v3 = findViewById(R.id.value4);
+                            v3.setText(obj.getJSONObject("main").getString("pressure") + " mbar");
+
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
                     }
+                },
+                new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        //displaying the error in toast if occurrs
+                        Toast.makeText(getApplicationContext(), error.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                });
 
-                    @Override public void onLongItemClick(View view, int position) {}
-                })
-        );
+        //creating a request queue
+        RequestQueue requestQueue = Volley.newRequestQueue(this);
 
-        if(!prepared) {
-            prepareGasData();
-            prepared = true;
-        }
-
-        Intent intent = new Intent(this, BluetoothService.class);
-        startService(intent);
-    }
-
-    private void prepareGasData() {
-        Gas gas = new Gas("NO2", "Nitrogen Dioxide", "100 ppm");
-        gasList.add(gas);
-
-        gas = new Gas("SO2", "Sulphur Dioxide", "200 ppm");
-        gasList.add(gas);
-
-        gas = new Gas("O2", "Oxygen", "300 ppm");
-        gasList.add(gas);
-
-        gas = new Gas("Cl", "Chlorine", "400 ppm");
-        gasList.add(gas);
-
-        gas = new Gas("Ar", "Argon", "20 ppm");
-        gasList.add(gas);
-
-        gas = new Gas("Xe", "Xenon", "10 ppm");
-        gasList.add(gas);
-
-        gas = new Gas("H2", "Hydrogen", "100 ppm");
-        gasList.add(gas);
-
-        gas = new Gas("He", "Helium", "100 ppm");
-        gasList.add(gas);
-
-        gas = new Gas("N2", "Nitrogen", "1000 ppm");
-        gasList.add(gas);
-
-        gas = new Gas("F", "Fluorine", "40 ppm");
-        gasList.add(gas);
-
-        gas = new Gas("Ne", "Neon", "50 ppm");
-        gasList.add(gas);
-
-        gasAdapter.notifyDataSetChanged();
-    }
-
-    public static void updateGasData(String data) {
-        HashMap<String, String> GasMap = new HashMap<>();
-        String units[] = data.split(",");
-        for(String unit: units) {
-            GasMap.put(unit.split("=")[0], unit.split("=")[1]);
-        }
-        for(Gas gas: gasList) {
-            gas.setConcentration(GasMap.get(gas.getFormula()) + " ppm");
-        }
-        gasAdapter.notifyDataSetChanged();
+        //adding the string request to request queue
+        requestQueue.add(stringRequest);
     }
 }

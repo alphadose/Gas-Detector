@@ -48,7 +48,7 @@ public class BluetoothService extends Service {
                     String data = new String(writeBuf);
                     data = data.substring(begin, end);
                     Log.d("Answer", data);
-                    MainActivity.updateGasData(data);
+                    Main2.updateGasData(data);
                     GraphActivity.updateGasData(data);
                     safetyCheck(data);
                     break;
