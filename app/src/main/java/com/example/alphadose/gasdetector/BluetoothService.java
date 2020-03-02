@@ -60,7 +60,9 @@ public class BluetoothService extends Service {
         HashMap<String, String> GasMap = new HashMap<>();
         String units[] = data.split(",");
         for(String unit: units) {
-            GasMap.put(unit.split("=")[0], unit.split("=")[1]);
+            String[] temp = unit.split("=");
+            if(temp.length != 2) continue;
+            GasMap.put(temp[0], temp[1]);
         }
         for(String gas: GasMap.keySet()) {
             if(Double.parseDouble(GasMap.get(gas)) > 890) {
